@@ -1,0 +1,385 @@
+{
+  "name": "News Dashboard Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "getAll",
+        "tableId": "posts",
+        "returnAll": true,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "source_url",
+              "condition": "eq",
+              "keyValue": "={{ $json.link }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        -176,
+        -16
+      ],
+      "id": "52092f71-370a-4625-a9c1-a13d8f816b4b",
+      "name": "Get many rows",
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "credentials": {
+        "supabaseApi": {
+          "id": "YOUR_SUPABASE_CREDENTIAL_ID",
+          "name": "Supabase account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.link }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        128,
+        272
+      ],
+      "id": "909a0d1d-d9e7-4899-9018-349cc55bac65",
+      "name": "HTTP Request",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "extractHtmlContent",
+        "extractionValues": {
+          "values": [
+            {
+              "key": "text",
+              "cssSelector": "p"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        320,
+        32
+      ],
+      "id": "23d631c3-0f6a-41fc-ad71-8f8f1a47e0b8",
+      "name": "HTML"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.ai.kodekloud.com/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_AI_API_KEY"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "model",
+              "value": "anthropic/claude-sonnet-4.5"
+            },
+            {
+              "name": "messages",
+              "value": "={{ [{\"role\": \"user\", \"content\": \"You are a social media content creator. Based on this news article, generate a JSON response with exactly these fields: 1. teaser: exactly 1-2 sentences that hook the reader for a Facebook post. 2. summary: 3-4 sentences describing the full news story. 3. tags: 5 relevant hashtags as a single string. 4. image_prompt: a detailed prompt to generate an image that represents this story. Return ONLY valid JSON, no other text. Article title: \" + $json.title + \" Article content: \" + $('HTML').item.json.text}] }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        528,
+        -80
+      ],
+      "id": "c36b9889-ce01-4587-9d8d-e3682e91c30e",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const aiContent = $input.item.json.choices[0].message.content;\nconst clean = aiContent.replace(/```json|```/g, '').trim();\nconst parsed = JSON.parse(clean);\n\n// Get original news item data\nconst originalItem = $('Code in JavaScript2').item.json;\n\nreturn {\n  json: {\n    source_url: originalItem.link,\n    article_title: originalItem.title,\n    source_site: originalItem.source_site || 'unknown',\n    published_at: originalItem.isoDate,\n    teaser: parsed.teaser,\n    summary: parsed.summary,\n    tags: parsed.tags,\n    image_prompt: parsed.image_prompt,\n    status: 'new'\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        720,
+        -48
+      ],
+      "id": "415b0717-64a0-43ab-9943-77422c26664b",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "tableId": "posts",
+        "fieldsUi": {
+          "fieldValues": [
+            {
+              "fieldId": "source_url",
+              "fieldValue": "={{ $json.source_url }}"
+            },
+            {
+              "fieldId": "article_title",
+              "fieldValue": "={{ $json.article_title }}"
+            },
+            {
+              "fieldId": "source_site",
+              "fieldValue": "={{ $json.source_site }}"
+            },
+            {
+              "fieldId": "teaser",
+              "fieldValue": "={{ $json.teaser }}"
+            },
+            {
+              "fieldId": "summary",
+              "fieldValue": "={{ $json.summary }}"
+            },
+            {
+              "fieldId": "tags",
+              "fieldValue": "={{ $json.tags }}"
+            },
+            {
+              "fieldId": "image_prompt",
+              "fieldValue": "={{ $json.image_prompt }}"
+            },
+            {
+              "fieldId": "status",
+              "fieldValue": "new"
+            },
+            {
+              "fieldId": "created_at",
+              "fieldValue": "={{ $json.published_at }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.supabase",
+      "typeVersion": 1,
+      "position": [
+        1040,
+        144
+      ],
+      "id": "42c46e8b-db10-4ff5-927e-c79cacd2e023",
+      "name": "Create a row",
+      "credentials": {
+        "supabaseApi": {
+          "id": "YOUR_SUPABASE_CREDENTIAL_ID",
+          "name": "Supabase account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "news-trigger",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -800,
+        176
+      ],
+      "id": "33cb3d50-b1a3-48f0-b7c6-df8d903dc7a1",
+      "name": "Webhook",
+      "webhookId": "70efa0b1-0042-4b15-aeac-c58daf64289e"
+    },
+    {
+      "parameters": {
+        "jsCode": "const feeds = [\n  { name: 'BBC', url: 'http://feeds.bbci.co.uk/news/rss.xml' },\n  { name: 'CNN', url: 'http://rss.cnn.com/rss/edition.rss' },\n  { name: 'Al Jazeera', url: 'https://www.aljazeera.com/xml/rss/all.xml' },\n  { name: 'The Guardian', url: 'https://www.theguardian.com/world/rss' }\n];\n\nreturn feeds.map(feed => ({ json: feed }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -672,
+        176
+      ],
+      "id": "f38f02fc-9185-434f-8ec5-f19595484799",
+      "name": "RSS List",
+      "executeOnce": true,
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -528,
+        176
+      ],
+      "id": "e3a01ae5-7f77-4ec7-a50f-1e02ce624e4d",
+      "name": "Fetch RSS",
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const results = [];\n\nfor (const item of $input.all()) {\n  const xml = item.json.data;\n  \n  if (!xml) continue;\n  \n  const itemMatches = xml.match(/<item>([\\s\\S]*?)<\\/item>/g) || [];\n\n  for (const entry of itemMatches.slice(0, 3)) {\n    const title = (\n      entry.match(/<title><!\\[CDATA\\[(.*?)\\]\\]><\\/title>/) ||\n      entry.match(/<title>(.*?)<\\/title>/)\n    )?.[1]?.trim() || '';\n\n    const link = (\n      entry.match(/<link>(.*?)<\\/link>/) || []\n    )?.[1]?.trim() || '';\n\n    const pubDate = (\n      entry.match(/<pubDate>(.*?)<\\/pubDate>/) || []\n    )?.[1]?.trim() || '';\n\n    const isoDate = pubDate\n      ? new Date(pubDate).toISOString()\n      : new Date().toISOString();\n\n    // Extract source site from URL\n    let sourceSite = 'Unknown';\n    if (link) {\n      const match = link.match(/^https?:\\/\\/[^\\/]+\\.[a-z]{2,6}/i);\n      sourceSite = match ? match[0] : 'Unknown';\n    }\n\n    if (title && link) {\n      results.push({ \n        json: { \n          title, \n          link, \n          pubDate, \n          isoDate, \n          source_site: sourceSite \n        } \n      });\n    }\n  }\n}\n\nif (results.length === 0) {\n  return [{ json: { error: 'No items found', inputCount: $input.all().length } }];\n}\n\nreturn results;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -384,
+        176
+      ],
+      "id": "40f046b2-1596-4e08-a6dc-075e06fabb38",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const dbRows = $('Get many rows').all();\nconst dbLinks = dbRows.map(row => row.json.link);\n\nreturn $('Code in JavaScript1').all().filter(item => {\n  return !dbLinks.includes(item.json.link);\n}).map(item => ({ json: item.json }));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        32,
+        -16
+      ],
+      "id": "9348be5b-9736-4309-96fa-f82c53472634",
+      "name": "Code in JavaScript2"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Get many rows": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTML": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Create a row",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "RSS List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RSS List": {
+      "main": [
+        [
+          {
+            "node": "Fetch RSS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch RSS": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "Get many rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "meta": {
+    "description": "News Dashboard Workflow - Automates news collection from multiple RSS feeds, processes content with AI, and stores in Supabase",
+    "templateCredsSetupCompleted": false
+  },
+  "tags": ["news", "automation", "rss", "supabase"]
+}
