@@ -1,6 +1,7 @@
 export type Post = {
   id: string
   created_at: string
+  published_at: string
   source_url: string
   article_title: string
   teaser: string

@@ -46,10 +46,24 @@ export default function PostDetail({ params }: { params: Promise<{ id: string }>
   }
 
   const timeAgo = (ts: string) => {
+    if (!ts) return ''
     const s = Math.floor((Date.now() - new Date(ts).getTime()) / 1000)
+    if (s < 60) return 'just now'
     if (s < 3600) return `${Math.floor(s / 60)}m ago`
     if (s < 86400) return `${Math.floor(s / 3600)}h ago`
     return `${Math.floor(s / 86400)}d ago`
+  }
+
+  const formatTime = (ts: string) => {
+    if (!ts) return 'Unknown time'
+    return new Date(ts).toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    })
   }
 
   if (loading) return (
@@ -82,7 +96,14 @@ export default function PostDetail({ params }: { params: Promise<{ id: string }>
         ← Back
       </button>
 
-      <div style={{ marginBottom: '0.5rem', display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+      {/* Meta — source + actual publish time */}
+      <div style={{
+        marginBottom: '0.5rem',
+        display: 'flex',
+        gap: '8px',
+        alignItems: 'center',
+        flexWrap: 'wrap'
+      }}>
         <span style={{
           fontSize: '11px',
           padding: '2px 8px',
@@ -92,11 +113,20 @@ export default function PostDetail({ params }: { params: Promise<{ id: string }>
         }}>
           {post.status}
         </span>
+        <span style={{ fontSize: '13px', fontWeight: 500, color: '#555' }}>
+          {post.source_site}
+        </span>
+        <span style={{ fontSize: '13px', color: '#ccc' }}>·</span>
         <span style={{ fontSize: '13px', color: '#999' }}>
-          {post.source_site} · {timeAgo(post.created_at)}
+          {formatTime(post.published_at)}
+        </span>
+        <span style={{ fontSize: '13px', color: '#ccc' }}>·</span>
+        <span style={{ fontSize: '13px', color: '#bbb' }}>
+          {timeAgo(post.published_at)}
         </span>
       </div>
 
+      {/* Title */}
       <h1 style={{
         fontSize: '20px',
         fontWeight: 500,
@@ -109,7 +139,14 @@ export default function PostDetail({ params }: { params: Promise<{ id: string }>
       {/* Generated Image */}
       {imageUrl && (
         <div style={{ marginBottom: '1.5rem' }}>
-          <div style={{ fontSize: '11px', fontWeight: 500, color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>
+          <div style={{
+            fontSize: '11px',
+            fontWeight: 500,
+            color: '#999',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
+            marginBottom: '8px'
+          }}>
             Generated image
           </div>
           <img
@@ -129,7 +166,14 @@ export default function PostDetail({ params }: { params: Promise<{ id: string }>
 
       {/* Teaser */}
       <div style={{ marginBottom: '1rem' }}>
-        <div style={{ fontSize: '11px', fontWeight: 500, color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
+        <div style={{
+          fontSize: '11px',
+          fontWeight: 500,
+          color: '#999',
+          textTransform: 'uppercase',
+          letterSpacing: '0.05em',
+          marginBottom: '6px'
+        }}>
           Facebook post teaser
         </div>
         <div className="card" style={{ position: 'relative', paddingRight: '70px' }}>
@@ -140,7 +184,14 @@ export default function PostDetail({ params }: { params: Promise<{ id: string }>
 
       {/* Summary */}
       <div style={{ marginBottom: '1rem' }}>
-        <div style={{ fontSize: '11px', fontWeight: 500, color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
+        <div style={{
+          fontSize: '11px',
+          fontWeight: 500,
+          color: '#999',
+          textTransform: 'uppercase',
+          letterSpacing: '0.05em',
+          marginBottom: '6px'
+        }}>
           Full news summary
         </div>
         <div className="card" style={{ position: 'relative', paddingRight: '70px', lineHeight: 1.7 }}>
@@ -151,7 +202,14 @@ export default function PostDetail({ params }: { params: Promise<{ id: string }>
 
       {/* Tags */}
       <div style={{ marginBottom: '1rem' }}>
-        <div style={{ fontSize: '11px', fontWeight: 500, color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
+        <div style={{
+          fontSize: '11px',
+          fontWeight: 500,
+          color: '#999',
+          textTransform: 'uppercase',
+          letterSpacing: '0.05em',
+          marginBottom: '6px'
+        }}>
           Tags
         </div>
         <div className="card" style={{ position: 'relative', paddingRight: '70px', color: '#185fa5' }}>
@@ -162,7 +220,14 @@ export default function PostDetail({ params }: { params: Promise<{ id: string }>
 
       {/* Image Prompt */}
       <div style={{ marginBottom: '1rem' }}>
-        <div style={{ fontSize: '11px', fontWeight: 500, color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
+        <div style={{
+          fontSize: '11px',
+          fontWeight: 500,
+          color: '#999',
+          textTransform: 'uppercase',
+          letterSpacing: '0.05em',
+          marginBottom: '6px'
+        }}>
           Image generation prompt
         </div>
         <div className="card" style={{ position: 'relative', paddingRight: '70px', color: '#666', fontStyle: 'italic' }}>
@@ -173,10 +238,30 @@ export default function PostDetail({ params }: { params: Promise<{ id: string }>
 
       {/* Source */}
       <div style={{ marginBottom: '1.5rem' }}>
-        <div style={{ fontSize: '11px', fontWeight: 500, color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '6px' }}>
+        <div style={{
+          fontSize: '11px',
+          fontWeight: 500,
+          color: '#999',
+          textTransform: 'uppercase',
+          letterSpacing: '0.05em',
+          marginBottom: '6px'
+        }}>
           Original source
         </div>
-            card
+        <div className="card">
+          <a
+            href={post.source_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              color: '#185fa5',
+              fontSize: '13px',
+              wordBreak: 'break-all'
+            }}
+          >
+            {post.source_url}
+          </a>
+        </div>
       </div>
 
       {/* Action buttons */}
