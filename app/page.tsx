@@ -20,7 +20,7 @@ export default function Dashboard() {
     const { data } = await supabase
       .from('posts')
       .select('*')
-      .order('published_at', { ascending: false })
+      .order('created_at', { ascending: false })
     if (data) setPosts(data)
     setLoading(false)
   }

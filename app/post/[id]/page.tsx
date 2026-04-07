@@ -118,11 +118,11 @@ export default function PostDetail({ params }: { params: Promise<{ id: string }>
         </span>
         <span style={{ fontSize: '13px', color: '#ccc' }}>·</span>
         <span style={{ fontSize: '13px', color: '#999' }}>
-          {formatTime(post.published_at)}
+          {formatTime(post.created_at)}
         </span>
         <span style={{ fontSize: '13px', color: '#ccc' }}>·</span>
         <span style={{ fontSize: '13px', color: '#bbb' }}>
-          {timeAgo(post.published_at)}
+          {timeAgo(post.created_at)}
         </span>
       </div>
 
